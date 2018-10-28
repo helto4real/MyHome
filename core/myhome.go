@@ -6,7 +6,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/helto4real/MyHome/core/logging"
+	"github.com/helto4real/MyHome/components"
+
+	"github.com/helto4real/MyHome/core/contracts"
 )
 
 type Config struct {
@@ -15,46 +17,73 @@ type Config struct {
 	OsSignals   chan (os.Signal)
 }
 
-// IMyHome is the interface for main AutoHome object
-type IMyHome interface {
-	// Init the home automation
-	Init()
-	Loop()
-	GetConfig() Config
+type MyHome struct {
+	components []interface{}
+	logger     *contracts.ILogger
 }
 
 // Init the automations
-func Init(loggerUsed logging.ILogger) bool {
-	logger = loggerUsed
+func (a *MyHome) Init(loggerUsed contracts.ILogger) bool {
+	a.logger = &loggerUsed
+	a.components = components.GetComponents()
+	a.initializeComponents()
+
 	GetConfig()
 	signal.Notify(config.OsSignals, syscall.SIGTERM)
 	signal.Notify(config.OsSignals, syscall.SIGINT)
+	a.setupDiscovery()
 	return true
 }
 
-func Loop() bool {
-	go eventHandler()
+func (a *MyHome) Logger() contracts.ILogger {
+	return *a.logger
+}
+
+func (a *MyHome) initializeComponents() {
+	for _, comp := range a.components {
+		x, ok := comp.(contracts.IComponent)
+
+		if ok {
+			go x.Initialize(a)
+		}
+
+	}
+}
+func (a *MyHome) setupDiscovery() {
+
+	for _, comp := range a.components {
+		x, ok := comp.(contracts.IDiscovery)
+
+		if ok {
+			go x.InitializeDiscovery()
+		}
+
+	}
+}
+
+func (a *MyHome) Loop() bool {
+	go a.eventHandler()
 
 	for {
 		select {
 		case <-config.MainChannel:
-			LogInformation("main channel")
+			(*a.logger).LogInformation("main channel")
 		case s := <-config.OsSignals:
 			close(config.MainChannel)
-			LogInformation("SIGNAL")
-			LogInformation(s.String())
+			(*a.logger).LogInformation("SIGNAL")
+			(*a.logger).LogInformation(s.String())
 			time.Sleep(2 * time.Second)
 			return true
 		}
 	}
 }
 
-func eventHandler() {
+func (a *MyHome) eventHandler() {
 	for {
 		select {
 		case _, mc := <-config.MainChannel:
 			if !mc {
-				LogInformation("Eventbus terminating, exiting eventhandler")
+				(*a.logger).LogInformation("Eventbus terminating, exiting eventhandler")
 				return
 			}
 		case <-time.After(1 * time.Second):
@@ -73,22 +102,4 @@ func GetConfig() Config {
 			make(chan os.Signal, 1)}
 	}
 	return *config
-}
-
-var logger logging.ILogger
-
-func LogError(text string) {
-	logger.LogError(text)
-}
-
-func LogWarning(text string) {
-	logger.LogWarning(text)
-}
-
-func LogInformation(text string) {
-	logger.LogInformation(text)
-}
-
-func LogDebug(text string) {
-	logger.LogDebug(text)
 }

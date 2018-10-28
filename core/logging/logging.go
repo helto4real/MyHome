@@ -4,29 +4,37 @@ import (
 	"log"
 )
 
-type ILogger interface {
-	// Init the home automation
-	LogError(text string)
-	LogWarning(text string)
-	LogInformation(test string)
-	LogDebug(text string)
-}
-
 // DefaultLogger logs to the standard io
 type DefaultLogger struct{}
 
-func (a DefaultLogger) LogError(text string) {
-	log.Fatalln(text)
+func (a DefaultLogger) LogError(format string, c ...interface{}) {
+	if c == nil {
+		log.Println()
+	} else {
+		log.Printf(format+"\n", c)
+	}
 }
 
-func (a DefaultLogger) LogWarning(text string) {
-	log.Println(text)
+func (a DefaultLogger) LogWarning(format string, c ...interface{}) {
+	if c == nil {
+		log.Println()
+	} else {
+		log.Printf(format+"\n", c)
+	}
 }
 
-func (a DefaultLogger) LogInformation(text string) {
-	log.Println(text)
+func (a DefaultLogger) LogInformation(format string, c ...interface{}) {
+	if c == nil {
+		log.Println()
+	} else {
+		log.Printf(format+"\n", c)
+	}
 }
 
-func (a DefaultLogger) LogDebug(text string) {
-	log.Println(text)
+func (a DefaultLogger) LogDebug(format string, c ...interface{}) {
+	if c == nil {
+		log.Println()
+	} else {
+		log.Printf(format+"\n", c)
+	}
 }
