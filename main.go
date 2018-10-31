@@ -27,7 +27,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 
 func setupWebserver() {
 	//http.HandleFunc("/", serveHome)
-	http.Handle("/", http.FileServer(http.Dir("./front-end/build/es6-bundled")))
+	http.Handle("/", http.FileServer(http.Dir("./front-end/build/es5-bundled")))
 	err := http.ListenAndServe(*addr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
