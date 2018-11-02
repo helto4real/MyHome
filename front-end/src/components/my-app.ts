@@ -17,6 +17,7 @@ import { installRouter } from 'pwa-helpers/router.js';
 import { updateMetadata } from 'pwa-helpers/metadata.js';
 
 // This element is connected to the Redux store.
+import { createConnection } from '../core/ws/connection.js'
 import { store, RootState } from '../store.js';
 
 // These are the actions needed by this element.
@@ -38,6 +39,7 @@ import '@polymer/app-layout/app-toolbar/app-toolbar.js';
 import { menuIcon } from './my-icons.js';
 import './snack-bar.js';
 
+let connection: WebSocket 
 class MyApp extends connect(store)(LitElement) {
   protected render() {
     // Anything that's related to rendering should be done in here.
@@ -245,8 +247,15 @@ class MyApp extends connect(store)(LitElement) {
     // To force all event listeners for gestures to be passive.
     // See https://www.polymer-project.org/3.0/docs/devguide/settings#setting-passive-touch-gestures
     setPassiveTouchGestures(true);
+    this.setupWSConnection();
   }
-
+  
+  private async setupWSConnection() {
+    console.info("Setup WebSocket on localhost:8082")
+    if (!connection) {
+      connection = await createConnection("localhost", "8082");
+    }
+  }
   protected firstUpdated() {
     installRouter((location) => store.dispatch(navigate(decodeURIComponent(location.pathname))));
     installOfflineWatcher((offline) => store.dispatch(updateOffline(offline)));

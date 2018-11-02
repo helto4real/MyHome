@@ -1,6 +1,6 @@
 package contracts
 
-// IDevice represents any device in the system
+// IComponent represents any component in the system
 type IComponent interface {
 	Initialize(home IMyHome) bool
 }
@@ -16,12 +16,14 @@ type IMyHome interface {
 	// Init the home automation
 	Init(ILogger) bool
 	Loop() bool
-	Logger() ILogger
-	//GetConfig() Config
+	GetLogger() ILogger
+	GetConfig() *Config
+	StartRoutine()
+	DoneRoutine()
 }
 
-// IDevice represents any device in the system
-type IDevice interface {
+// IEntity represents any entity in the system
+type IEntity interface {
 	Id() string
 	Name() string
 }

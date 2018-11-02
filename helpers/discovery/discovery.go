@@ -9,24 +9,38 @@ import (
 )
 
 type ZeroConfigDiscovery struct {
+	cancel       context.CancelFunc
+	shouldCancel bool
 }
 
-func (a ZeroConfigDiscovery) Discover(serviceCategory string) []*zeroconf.ServiceEntry {
+func (a *ZeroConfigDiscovery) EndDiscovery() {
+	a.shouldCancel = true
+	a.cancel()
+}
+
+func (a *ZeroConfigDiscovery) ShouldCancel() bool {
+	return a.shouldCancel
+}
+
+func (a *ZeroConfigDiscovery) Discover(serviceCategory string, discoveredDevices chan *zeroconf.ServiceEntry) {
+	log.Print("START Discovery Zero Conf")
+	defer log.Print("END Discovery Zero Conf")
+
+	a.shouldCancel = false
 	resolver, err := zeroconf.NewResolver(nil)
 	if err != nil {
 		log.Fatalln("Failed to initialize resolver:", err.Error())
 	}
-	var res []*zeroconf.ServiceEntry
-
 	entries := make(chan *zeroconf.ServiceEntry)
 	go func(results <-chan *zeroconf.ServiceEntry) {
 		for entry := range results {
-			res = append(res, entry)
+			discoveredDevices <- entry
 		}
 		log.Println("No more entries.")
 	}(entries)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	a.cancel = cancel
 	defer cancel()
 	err = resolver.Browse(ctx, serviceCategory, "local.", entries)
 	if err != nil {
@@ -34,6 +48,6 @@ func (a ZeroConfigDiscovery) Discover(serviceCategory string) []*zeroconf.Servic
 	}
 
 	<-ctx.Done()
-
-	return res
+	// Wait some additional time to see debug messages on go routine shutdown.
+	time.Sleep(1 * time.Second)
 }

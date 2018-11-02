@@ -9,7 +9,7 @@ type DefaultLogger struct{}
 
 func (a DefaultLogger) LogError(format string, c ...interface{}) {
 	if c == nil {
-		log.Println()
+		log.Println(format)
 	} else {
 		log.Printf(format+"\n", c)
 	}
@@ -17,7 +17,7 @@ func (a DefaultLogger) LogError(format string, c ...interface{}) {
 
 func (a DefaultLogger) LogWarning(format string, c ...interface{}) {
 	if c == nil {
-		log.Println()
+		log.Println(format)
 	} else {
 		log.Printf(format+"\n", c)
 	}
@@ -25,7 +25,7 @@ func (a DefaultLogger) LogWarning(format string, c ...interface{}) {
 
 func (a DefaultLogger) LogInformation(format string, c ...interface{}) {
 	if c == nil {
-		log.Println()
+		log.Println(format)
 	} else {
 		log.Printf(format+"\n", c)
 	}
@@ -33,7 +33,7 @@ func (a DefaultLogger) LogInformation(format string, c ...interface{}) {
 
 func (a DefaultLogger) LogDebug(format string, c ...interface{}) {
 	if c == nil {
-		log.Println()
+		log.Println(format)
 	} else {
 		log.Printf(format+"\n", c)
 	}
