@@ -15,6 +15,13 @@ matrix:
   allow_failures:
     - go: tip
 
+before_install:
+  # gox simplifies building for multiple architectures
+  - go get github.com/mitchellh/gox
+
+install:
+  - # skip
+
 script:
   - go get -t -v ./...
   - diff -u <(echo -n) <(gofmt -d .)
