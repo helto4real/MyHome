@@ -17,7 +17,7 @@ script:
 - go get -t -v ./...
 - diff -u <(echo -n) <(gofmt -d .)
 - go test -v -race ./...
-- if [ "${LATEST}" = "true" ]; then gox -os="linux darwin windows" -arch="amd64" -output="logshare.."
+- if [ "${LATEST}" = "true" ]; then gox -os="linux darwin windows" -arch="amd64" -output="builds/{{.Dir}}_{{.OS}}_{{.Arch}}"
   -ldflags "-X main.Rev=`git rev-parse --short HEAD`" -verbose ./...; fi
 deploy:
   provider: releases
@@ -25,9 +25,9 @@ deploy:
   api_key:
     secure: Fq2aMxZorqyT3omuUucBx0Je5LXJ70xEzEuLmZL4jVK4nRoGVLoZH/v6RaqSmeD3J1kD4Um/w8jweqcRbCc/zw5uMFB+3IGLZPK/F9NtTeMMoTAkDL8zBECHIdMCFvmAtQoLrBFvl8M9toUnQsm+/3mmtLWrRdFn6u0HrTTXf9jM3C/QG+nDSG5g/KBHZATHC7KWRcP1n9UG+UILCJCB1dMmRWmaN0qvQdFDpXermQ4gveDFaIuwNXoi4kz1Oza60c9ODupCejoiQelDIcUqFrSDhVgw6IAH3zhzfri4dN0835euwFwuS2dpqzzT8KGrM0VTEIcgYTwktnCru4WSSacdu1COsLahK+FN1fKk8+vzFvQ0pSoSor9/mFsr6R3PXXf1k7X/kC10SBV41oQTVsLDBR9S6rebyglWZVfw9snY89/sZg+QNlL79I46wvWZTcf21+0DhMMQTOGipMek8zBNwIJVlzctUMBlpFuhN5NGtlJsjeZ9KqykpOlzqb0bwt+TmEJ4b3WAixtThaf6he9KatAYKPyIHt5vsX3CBk4APIUp1rPzyoxesecHRfdKsjKeHGNOAPKLL6iDMS2YRjqru3wTt+GfNx8fcK3vZNCs1p/nTYcVExxkzuACVEuql9BjY9kXruV+mfhm7LcjsztAtSfXYKFuSpBIBEi2iqw=
   file: 
-    - logshare.windows.amd64.exe
-    - logshare.darwin.amd64
-    - logshare.linux.amd64
+    - builds/MyHome_windows_amd64.exe
+    - builds/MyHome_darwin_amd64
+    - builds/MyHome_linux_amd64
   on:
     repo: helto4real/MyHome
     branch: dev
