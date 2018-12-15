@@ -29,8 +29,10 @@ import { lazyReducerEnhancer } from 'pwa-helpers/lazy-reducer-enhancer.js';
 import app, { AppState } from './reducers/app.js';
 import { CounterState } from './reducers/counter.js';
 import { ShopState } from './reducers/shop.js';
+import { MHState } from './reducers/entity.js';
 import { AppAction } from './actions/app.js';
 import { CounterAction } from './actions/counter.js';
+import { EntityAction } from './actions/entity.js';
 import { ShopAction } from './actions/shop.js';
 
 // Overall state extends static states and partials lazy states.
@@ -38,9 +40,10 @@ export interface RootState {
   app?: AppState;
   counter?: CounterState;
   shop?: ShopState;
+  my_home?: MHState;
 }
 
-export type RootAction = AppAction | CounterAction | ShopAction;
+export type RootAction = AppAction | CounterAction | ShopAction | EntityAction;
 
 // Sets up a Chrome extension for time travel debugging.
 // See https://github.com/zalmoxisus/redux-devtools-extension for more information.

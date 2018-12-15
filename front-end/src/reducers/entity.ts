@@ -1,33 +1,66 @@
-import { Reducer } from 'redux';
+  import { Reducer } from 'redux';
+  import { RootAction } from '../store.js';
 
-import {
-    STATE_UPDATE,
-    EntityAction
+  import {
+   // STATE_UPDATE,
+    GET_ENTITIES,
+   // EntityAction
   } from '../actions/entity.js';
 
-export interface MHState {
+  export interface MHState {
     entities: EntitiesState;
     error: string;
-}
-export interface EntitiesState {
-    [index:string]: EntityState;
+  }
+  export interface EntitiesState {
+    [index: string]: EntityState;
   }
 
   export interface EntityState {
-    id: number;
-    title: string;
-    price: number;
-    inventory: number;
+    id: string;
+    state: string;
+    attributes: string;
   }
 
-  const entity = (state: EntityState, action: EntityAction) => {
+  const INITIAL_STATE: MHState = {
+    entities: {},
+    error: ''
+  };
+
+  const my_home: Reducer<MHState, RootAction> = (state = INITIAL_STATE, action) => {
     switch (action.type) {
-      case STATE_UPDATE:
+      case GET_ENTITIES:
         return {
           ...state,
-          inventory: state.inventory - 1
+          entities: action.entities
         };
       default:
         return state;
     }
   };
+
+  // const entities = (state: EntitiesState, action: EntityAction) => {
+  //   switch (action.type) {
+  //     case STATE_UPDATE:
+  //       const entityId = action.entityId;
+  //       return {
+  //         ...state,
+  //         [entityId]: entity(state[entityId], action)
+  //       };
+  //     default:
+  //       return state;
+  //   }
+  // };
+  // const entity = (state: EntityState, action: EntityAction) => {
+  //   switch (action.type) {
+  //     case STATE_UPDATE:
+  //       return {
+  //         ...state,
+  //         state: state.state
+  //       };
+  //     default:
+  //       return state;
+  //   }
+  // };
+
+  export default my_home;
+  

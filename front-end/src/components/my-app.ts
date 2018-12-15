@@ -242,12 +242,14 @@ class MyApp extends connect(store)(LitElement) {
   @property({type: Boolean})
   private _offline = false;
 
+  
   constructor() {
     super();
     // To force all event listeners for gestures to be passive.
     // See https://www.polymer-project.org/3.0/docs/devguide/settings#setting-passive-touch-gestures
     setPassiveTouchGestures(true);
     this.setupWSConnection();
+   // store.subscribe(() => console.error(store.getState()))
   }
   
   private async setupWSConnection() {

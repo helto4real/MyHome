@@ -17,6 +17,7 @@ type IMyHome interface {
 	Init(ILogger) bool
 	Loop() bool
 	GetLogger() ILogger
+	GetEntityList() IEntityList
 	GetConfig() *Config
 	StartRoutine()
 	DoneRoutine()
@@ -24,8 +25,13 @@ type IMyHome interface {
 
 // IEntity represents any entity in the system
 type IEntity interface {
-	Id() string
-	Name() string
+	GetID() string
+	GetName() string
+	GetState() string
+	GetAttributes() string
+}
+type IEntityList interface {
+	SetEntity(IEntity) bool
 }
 
 type ILogger interface {

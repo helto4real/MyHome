@@ -2,6 +2,7 @@ package cast
 
 import (
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/grandcat/zeroconf"
@@ -61,10 +62,10 @@ func (a *Cast) InitializeDiscovery() bool {
 				return false
 			}
 			//a.log.LogInformation("----------")
-			//a.log.LogInformation("IP: %s", entry.AddrIPv4)
+			a.log.LogInformation("IP: %s", entry.AddrIPv4)
 			//a.log.LogInformation("Host: %s", entry.HostName)
 			//a.log.LogInformation("Instance: %s", entry.Instance)
-			//a.log.LogInformation("Port: %s", entry.Port)
+			a.log.LogInformation("Port: %s", entry.Port)
 			//a.log.LogInformation("Service: %s", entry.Service)
 			//a.log.LogInformation("Service I Name: %s", entry.ServiceInstanceName())
 			//a.log.LogInformation("Text: %s", entry.Text)
@@ -72,15 +73,23 @@ func (a *Cast) InitializeDiscovery() bool {
 			//a.log.LogInformation("Service Type: %s", entry.ServiceTypeName)
 			//a.log.LogInformation("Service Type: %s", entry.ServiceTypeName)
 			//a.log.LogInformation("----------")
-
-			newCastEntity := NewCastEntity(entry.Instance, entry.AddrIPv4[0].String(), entry.Port)
+			var deviceName = "default"
+			for _, name := range entry.Text {
+				s := strings.Split(name, "=")
+				attribute := s[0]
+				text := s[1]
+				if attribute == "fn" {
+					deviceName = text
+					a.log.LogInformation("Found device: %s", deviceName)
+				}
+			}
+			newCastEntity := NewCastEntity("cast_"+entry.Instance, deviceName, entry.AddrIPv4[0].String(), entry.Port)
 			message := c.NewMessage(c.MessageType.EntityUpdated, newCastEntity)
 			a.config.MainChannel <- *message
 
 		}
 	}
 
-	return true
 }
 
 func (a *Cast) EndDiscovery() {
@@ -95,11 +104,22 @@ func (a *Cast) EndDiscovery() {
 }
 
 type CastEntity struct {
-	Name string
-	Id   string
+	ID         string
+	Name       string
+	State      string
+	Attributes string
+	IP         string
 }
 
-func NewCastEntity(name string, ip string, port int) *CastEntity {
+// GetId returns unique id of entity
+func (a *CastEntity) GetID() string         { return a.ID }
+func (a *CastEntity) GetState() string      { return a.State }
+func (a *CastEntity) GetAttributes() string { return a.Attributes }
+func (a *CastEntity) GetName() string       { return a.Name }
+
+func NewCastEntity(id string, name string, ip string, port int) *CastEntity {
 	return &CastEntity{
+		ID:   id,
+		IP:   ip,
 		Name: name}
 }

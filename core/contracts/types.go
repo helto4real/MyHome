@@ -5,10 +5,19 @@ import (
 )
 
 type Config struct {
-	Path        string
-	MainChannel chan (Message)
-	StopChannel chan bool
-	OsSignals   chan (os.Signal)
+	Path             string
+	MainChannel      chan (Message)
+	BroadCastChannel chan (Message)
+	EventChannel     chan (Message)
+	StopChannel      chan bool
+	OsSignals        chan (os.Signal)
+}
+
+func (a *Config) CloseChannels() {
+	close(a.BroadCastChannel)
+	close(a.EventChannel)
+	close(a.StopChannel)
+	close(a.MainChannel)
 }
 
 type messageType struct {

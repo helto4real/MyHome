@@ -26,7 +26,7 @@ func listenEvents(hub *Hub, config *contracts.Config) {
 	defer log.Print("STOP: Listen to events")
 	for {
 		select {
-		case msg, ok := <-config.MainChannel:
+		case msg, ok := <-config.BroadCastChannel:
 			if !ok {
 				log.Print("Main channel terminating, exiting ListenEvents")
 				return
