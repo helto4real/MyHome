@@ -9,15 +9,14 @@ import (
 	"time"
 
 	"github.com/helto4real/MyHome/core/entity"
-
-	"github.com/helto4real/MyHome/components"
+	"github.com/helto4real/MyHome/platforms"
 
 	c "github.com/helto4real/MyHome/core/contracts"
 	"github.com/helto4real/MyHome/core/net"
 )
 
 type MyHome struct {
-	components   []interface{}
+	platforms    []interface{}
 	logger       c.ILogger
 	syncRoutines sync.WaitGroup
 	entityList   entity.EntityList
@@ -29,7 +28,7 @@ func (a *MyHome) Init(loggerUsed c.ILogger) bool {
 	a.logger = loggerUsed
 	newConfig()
 	a.entityList = entity.NewEntityList(a)
-	a.components = components.GetComponents()
+	a.platforms = platforms.GetPlatforms()
 	a.initializeComponents()
 
 	signal.Notify(config.OsSignals, syscall.SIGTERM)
@@ -97,7 +96,7 @@ func (a *MyHome) GetEntityList() c.IEntityList {
 	return &a.entityList
 }
 func (a *MyHome) initializeComponents() {
-	for _, comp := range a.components {
+	for _, comp := range a.platforms {
 		x, ok := comp.(c.IComponent)
 
 		if ok {
@@ -109,7 +108,7 @@ func (a *MyHome) initializeComponents() {
 }
 func (a *MyHome) setupDiscovery() {
 
-	for _, comp := range a.components {
+	for _, comp := range a.platforms {
 		x, ok := comp.(c.IDiscovery)
 
 		if ok {
@@ -121,7 +120,7 @@ func (a *MyHome) setupDiscovery() {
 }
 
 func (a *MyHome) endDiscovery() {
-	for _, comp := range a.components {
+	for _, comp := range a.platforms {
 		x, ok := comp.(c.IDiscovery)
 
 		if ok {

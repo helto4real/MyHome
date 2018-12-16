@@ -23,17 +23,6 @@ type IMyHome interface {
 	DoneRoutine()
 }
 
-// IEntity represents any entity in the system
-type IEntity interface {
-	GetID() string
-	GetName() string
-	GetState() string
-	GetAttributes() string
-}
-type IEntityList interface {
-	SetEntity(IEntity) bool
-}
-
 type ILogger interface {
 	// Init the home automation
 	LogError(format string, a ...interface{})
