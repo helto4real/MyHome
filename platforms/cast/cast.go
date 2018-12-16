@@ -45,7 +45,7 @@ func (a *Cast) doDicoveries() {
 }
 
 func (a *Cast) InitializeDiscovery() bool {
-	log.Print("START InitializeDiscovery")
+	a.log.LogInformation("START InitializeDiscovery")
 	defer log.Print("STOP InitializeDiscovery")
 
 	defer a.home.DoneRoutine()
@@ -93,8 +93,8 @@ func (a *Cast) InitializeDiscovery() bool {
 }
 
 func (a *Cast) EndDiscovery() {
-	log.Print("START EndDiscovery")
-	defer log.Print("STOP EndDiscovery")
+	a.log.LogInformation("START EndDiscovery")
+	defer a.log.LogInformation("STOP EndDiscovery")
 	defer a.home.DoneRoutine()
 
 	a.zeroConf.EndDiscovery()

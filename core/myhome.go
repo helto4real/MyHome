@@ -17,9 +17,9 @@ import (
 
 type MyHome struct {
 	platforms    []interface{}
+	entities     entity.EntityList
 	logger       c.ILogger
 	syncRoutines sync.WaitGroup
-	entityList   entity.EntityList
 }
 
 // Init the automations
@@ -27,7 +27,7 @@ func (a *MyHome) Init(loggerUsed c.ILogger) bool {
 	a.syncRoutines = sync.WaitGroup{}
 	a.logger = loggerUsed
 	newConfig()
-	a.entityList = entity.NewEntityList(a)
+	a.entities = entity.NewEntityList(a)
 	a.platforms = platforms.GetPlatforms()
 	a.initializeComponents()
 
@@ -93,7 +93,7 @@ func (a *MyHome) GetLogger() c.ILogger {
 }
 
 func (a *MyHome) GetEntityList() c.IEntityList {
-	return &a.entityList
+	return &a.entities
 }
 func (a *MyHome) initializeComponents() {
 	for _, comp := range a.platforms {
@@ -150,7 +150,7 @@ func (a *MyHome) Loop() bool {
 				a.logger.LogInformation("Main channel terminating, exiting Loop")
 				return false
 			}
-			if a.entityList.HandleMessage(message) {
+			if a.entities.HandleMessage(message) {
 				// Message should be broadcasted to clients
 				config.BroadCastChannel <- message
 			}

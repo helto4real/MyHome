@@ -35,6 +35,14 @@ func main() {
 	home.Init(logging.DefaultLogger{})
 
 	home.Loop()
-	log.Print("Ended")
+	// OsSignals := make(chan os.Signal, 1)
+	// wsclient := net.ConnectWS()
 
+	// for {
+	// 	select {
+	// 	case <-OsSignals:
+	// 		return
+	// 	}
+	// }
+	log.Print("ENDED")
 }
