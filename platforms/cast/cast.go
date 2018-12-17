@@ -14,13 +14,13 @@ type Cast struct {
 	zeroConf         *discovery.ZeroConfigDiscovery
 	log              c.ILogger
 	home             c.IMyHome
-	config           *c.Config
+	config           *c.Channels
 	discoveryChannel chan *zeroconf.ServiceEntry
 	syncRoutines     *sync.WaitGroup
 }
 
 func (a *Cast) Initialize(home c.IMyHome) bool {
-	a.config = home.GetConfig()
+	a.config = home.GetChannels()
 	a.log = home.GetLogger()
 	a.home = home
 	a.syncRoutines = &sync.WaitGroup{}

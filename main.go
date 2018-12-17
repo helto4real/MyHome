@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/helto4real/MyHome/core"
+	"github.com/helto4real/MyHome/core/config"
 	"github.com/helto4real/MyHome/core/contracts"
 	"github.com/helto4real/MyHome/core/logging"
 )
@@ -32,7 +33,13 @@ func main() {
 	// }
 
 	var home contracts.IMyHome = new(core.MyHome)
-	home.Init(logging.DefaultLogger{})
+	config, err := config.NewConfiguration().Open()
+	if err != nil {
+		log.Print("Failed to open config.\r\n")
+		log.Print(err)
+		return
+	}
+	home.Init(logging.DefaultLogger{}, config)
 
 	home.Loop()
 	// OsSignals := make(chan os.Signal, 1)

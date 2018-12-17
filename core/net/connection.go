@@ -21,7 +21,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./front-end/build/es5-bundled/index.html")
 }
 
-func listenEvents(hub *Hub, config *contracts.Config) {
+func listenEvents(hub *Hub, config *contracts.Channels) {
 	log.Print("START: Listen to events")
 	defer log.Print("STOP: Listen to events")
 	for {
@@ -67,7 +67,7 @@ func SetupWebservers(home contracts.IMyHome) {
 	webServer := &http.Server{Addr: ":8082"}
 	hub = NewHub()
 	go hub.Run()
-	go listenEvents(hub, home.GetConfig())
+	go listenEvents(hub, home.GetChannels())
 
 	http.Handle("/", http.FileServer(http.Dir("./front-end/build/es5-bundled")))
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,5 @@
+# Testfixture for config
+
+home_assistant:
+  ip: '192.168.0.100'
+  token: 'ABCDEFG1234567'

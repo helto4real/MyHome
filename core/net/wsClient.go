@@ -42,6 +42,7 @@ type WsClient struct {
 	// Buffered channel of outbound messages.
 	send            chan []byte
 	ReceiverChannel chan []byte
+	Fatal           bool
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -60,9 +61,12 @@ func (c *WsClient) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Printf("Unexpected close error: %v", err)
+			} else {
+				log.Printf("Error reading websocket: %v", err)
 			}
-			log.Printf("Error reading websocket: %v", err)
+
+			c.Close(true)
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
@@ -71,7 +75,20 @@ func (c *WsClient) readPump() {
 
 	}
 }
+func (c *WsClient) Close(fatal bool) {
+	c.Fatal = fatal
+	// Close the connection
+	c.conn.Close()
+	if c.ReceiverChannel != nil {
+		close(c.ReceiverChannel)
+		c.ReceiverChannel = nil
+	}
+	if c.send != nil {
+		close(c.send)
+		c.send = nil
+	}
 
+}
 func (c *WsClient) SendMap(message map[string]interface{}) {
 
 	jsonString, err := json.Marshal(message)
@@ -144,11 +161,11 @@ func ConnectWS(ip string) *WsClient {
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		log.Print("dial:", err)
 		return nil
 	}
 
-	client := &WsClient{conn: c, send: make(chan []byte, 256), ReceiverChannel: make(chan []byte)}
+	client := &WsClient{conn: c, send: make(chan []byte, 256), ReceiverChannel: make(chan []byte), Fatal: false}
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.

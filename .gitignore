@@ -5,6 +5,7 @@
 *.so
 *.dylib
 debug
+count
 MyHome_*_*
 # Test binary, build with `go test -c`
 *.test

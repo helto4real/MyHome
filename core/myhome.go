@@ -19,20 +19,22 @@ type MyHome struct {
 	platforms    []interface{}
 	entities     entity.EntityList
 	logger       c.ILogger
+	config       *c.Config
 	syncRoutines sync.WaitGroup
 }
 
 // Init the automations
-func (a *MyHome) Init(loggerUsed c.ILogger) bool {
+func (a *MyHome) Init(loggerUsed c.ILogger, config *c.Config) bool {
 	a.syncRoutines = sync.WaitGroup{}
 	a.logger = loggerUsed
-	newConfig()
+	a.config = config
+	newChannels()
 	a.entities = entity.NewEntityList(a)
 	a.platforms = platforms.GetPlatforms()
 	a.initializeComponents()
 
-	signal.Notify(config.OsSignals, syscall.SIGTERM)
-	signal.Notify(config.OsSignals, syscall.SIGINT)
+	signal.Notify(channels.OsSignals, syscall.SIGTERM)
+	signal.Notify(channels.OsSignals, syscall.SIGINT)
 	a.setupWebservers()
 	a.setupDiscovery()
 	return true
@@ -145,23 +147,23 @@ func (a *MyHome) Loop() bool {
 
 	for {
 		select {
-		case message, mc := <-config.MainChannel:
+		case message, mc := <-channels.MainChannel:
 			if !mc {
 				a.logger.LogInformation("Main channel terminating, exiting Loop")
 				return false
 			}
 			if a.entities.HandleMessage(message) {
 				// Message should be broadcasted to clients
-				config.BroadCastChannel <- message
+				channels.BroadCastChannel <- message
 			}
-		case <-config.OsSignals:
+		case <-channels.OsSignals:
 			a.logger.LogInformation("OS SIGNAL")
-			config.CloseChannels()
+			channels.CloseChannels()
 			a.end()
 
 			return true
-		case <-config.StopChannel:
-			config.CloseChannels()
+		case <-channels.StopChannel:
+			channels.CloseChannels()
 			a.end()
 
 			return true
@@ -174,7 +176,7 @@ func (a *MyHome) eventHandler() {
 
 	for {
 		select {
-		case _, mc := <-config.EventChannel:
+		case _, mc := <-channels.EventChannel:
 			if !mc {
 				a.logger.LogInformation("Eventbus terminating, exiting eventhandler")
 				return
@@ -186,21 +188,25 @@ func (a *MyHome) eventHandler() {
 	}
 }
 
-func (a *MyHome) GetConfig() *c.Config {
-	return config
+func (a *MyHome) GetChannels() *c.Channels {
+	return channels
 }
 
-var config *c.Config
+func (a *MyHome) GetConfig() *c.Config {
+	return a.config
+}
 
-func newConfig() c.Config {
-	if config == nil {
-		config = &c.Config{
-			Path:             "Hello",
+var channels *c.Channels
+
+func newChannels() c.Channels {
+	if channels == nil {
+		channels = &c.Channels{
+
 			MainChannel:      make(chan c.Message),
 			BroadCastChannel: make(chan c.Message),
 			EventChannel:     make(chan c.Message),
 			StopChannel:      make(chan bool),
 			OsSignals:        make(chan os.Signal, 1)}
 	}
-	return *config
+	return *channels
 }

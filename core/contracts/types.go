@@ -4,8 +4,7 @@ import (
 	"os"
 )
 
-type Config struct {
-	Path             string
+type Channels struct {
 	MainChannel      chan (Message)
 	BroadCastChannel chan (Message)
 	EventChannel     chan (Message)
@@ -13,7 +12,7 @@ type Config struct {
 	OsSignals        chan (os.Signal)
 }
 
-func (a *Config) CloseChannels() {
+func (a *Channels) CloseChannels() {
 	close(a.BroadCastChannel)
 	close(a.EventChannel)
 	close(a.StopChannel)

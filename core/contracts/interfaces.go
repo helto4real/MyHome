@@ -14,10 +14,11 @@ type IDiscovery interface {
 // IMyHome is the interface for main AutoHome object
 type IMyHome interface {
 	// Init the home automation
-	Init(ILogger) bool
+	Init(ILogger, *Config) bool
 	Loop() bool
 	GetLogger() ILogger
 	GetEntityList() IEntityList
+	GetChannels() *Channels
 	GetConfig() *Config
 	StartRoutine()
 	DoneRoutine()
@@ -29,4 +30,10 @@ type ILogger interface {
 	LogWarning(format string, a ...interface{})
 	LogInformation(format string, a ...interface{})
 	LogDebug(format string, a ...interface{})
+}
+
+// IOS hides the implementation of os specific logic
+type IOS interface {
+	// HomePath is the path to the home directory
+	HomePath() string
 }
