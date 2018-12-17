@@ -109,16 +109,15 @@ func (a *HomeAssistantPlatform) subscribeEvents() {
 }
 
 func (a *HomeAssistantPlatform) handleMessage(message Result) {
-	//log.Printf("message->: %s", message)
 
 	if message.MessageType == "auth_required" {
-		log.Printf("message->: %s", message)
+		log.Print("message->: ", message)
 		a.log.LogInformation("Got auth required, sending auth token")
 		config := a.home.GetConfig()
 
 		a.wsClient.SendString("{\"type\": \"auth\",\"access_token\": \"" + config.HomeAssistant.Token + "\"}")
 	} else if message.MessageType == "auth_ok" {
-		log.Printf("message->: %s", message)
+		log.Print("message->: ", message)
 		a.log.LogInformation("Got auth_ok, downloading all states initially")
 		a.sendMessage("get_states")
 	} else if message.MessageType == "result" {
@@ -129,9 +128,9 @@ func (a *HomeAssistantPlatform) handleMessage(message Result) {
 		}
 	} else if message.MessageType == "event" {
 		data := message.Event.Data
-		log.Printf("\r\n\r\n---------------------------------------")
-		log.Printf("message->: %s, new state: %s", data.EntityId, data.NewState.State)
-		log.Printf("\r\n---------------------------------------")
+		a.log.LogInformation("---------------------------------------")
+		a.log.LogInformation("message->: %s", data.EntityId, data.NewState.State)
+		a.log.LogInformation("---------------------------------------")
 	}
 
 }
