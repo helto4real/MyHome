@@ -15,7 +15,6 @@ install:
 - 
 script:
 - go get -t -v ./...
-- diff -u <(echo -n) <(gofmt -d .)
 - go test -v -race ./...
 - if [ "${LATEST}" = "true" ]; then gox -os="linux darwin windows" -arch="amd64" -output="builds/{{.Dir}}_{{.OS}}_{{.Arch}}"
   -ldflags "-X main.Rev=`git rev-parse --short HEAD`" -verbose ./...; fi
