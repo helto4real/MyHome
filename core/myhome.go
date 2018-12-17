@@ -9,31 +9,32 @@ import (
 	"time"
 
 	"github.com/helto4real/MyHome/core/entity"
-
-	"github.com/helto4real/MyHome/components"
+	"github.com/helto4real/MyHome/platforms"
 
 	c "github.com/helto4real/MyHome/core/contracts"
 	"github.com/helto4real/MyHome/core/net"
 )
 
 type MyHome struct {
-	components   []interface{}
+	platforms    []interface{}
+	entities     entity.EntityList
 	logger       c.ILogger
+	config       *c.Config
 	syncRoutines sync.WaitGroup
-	entityList   entity.EntityList
 }
 
 // Init the automations
-func (a *MyHome) Init(loggerUsed c.ILogger) bool {
+func (a *MyHome) Init(loggerUsed c.ILogger, config *c.Config) bool {
 	a.syncRoutines = sync.WaitGroup{}
 	a.logger = loggerUsed
-	newConfig()
-	a.entityList = entity.NewEntityList(a)
-	a.components = components.GetComponents()
+	a.config = config
+	newChannels()
+	a.entities = entity.NewEntityList(a)
+	a.platforms = platforms.GetPlatforms()
 	a.initializeComponents()
 
-	signal.Notify(config.OsSignals, syscall.SIGTERM)
-	signal.Notify(config.OsSignals, syscall.SIGINT)
+	signal.Notify(channels.OsSignals, syscall.SIGTERM)
+	signal.Notify(channels.OsSignals, syscall.SIGINT)
 	a.setupWebservers()
 	a.setupDiscovery()
 	return true
@@ -94,10 +95,10 @@ func (a *MyHome) GetLogger() c.ILogger {
 }
 
 func (a *MyHome) GetEntityList() c.IEntityList {
-	return &a.entityList
+	return &a.entities
 }
 func (a *MyHome) initializeComponents() {
-	for _, comp := range a.components {
+	for _, comp := range a.platforms {
 		x, ok := comp.(c.IComponent)
 
 		if ok {
@@ -109,7 +110,7 @@ func (a *MyHome) initializeComponents() {
 }
 func (a *MyHome) setupDiscovery() {
 
-	for _, comp := range a.components {
+	for _, comp := range a.platforms {
 		x, ok := comp.(c.IDiscovery)
 
 		if ok {
@@ -121,7 +122,7 @@ func (a *MyHome) setupDiscovery() {
 }
 
 func (a *MyHome) endDiscovery() {
-	for _, comp := range a.components {
+	for _, comp := range a.platforms {
 		x, ok := comp.(c.IDiscovery)
 
 		if ok {
@@ -146,23 +147,23 @@ func (a *MyHome) Loop() bool {
 
 	for {
 		select {
-		case message, mc := <-config.MainChannel:
+		case message, mc := <-channels.MainChannel:
 			if !mc {
 				a.logger.LogInformation("Main channel terminating, exiting Loop")
 				return false
 			}
-			if a.entityList.HandleMessage(message) {
+			if a.entities.HandleMessage(message) {
 				// Message should be broadcasted to clients
-				config.BroadCastChannel <- message
+				channels.BroadCastChannel <- message
 			}
-		case <-config.OsSignals:
+		case <-channels.OsSignals:
 			a.logger.LogInformation("OS SIGNAL")
-			config.CloseChannels()
+			channels.CloseChannels()
 			a.end()
 
 			return true
-		case <-config.StopChannel:
-			config.CloseChannels()
+		case <-channels.StopChannel:
+			channels.CloseChannels()
 			a.end()
 
 			return true
@@ -175,7 +176,7 @@ func (a *MyHome) eventHandler() {
 
 	for {
 		select {
-		case _, mc := <-config.EventChannel:
+		case _, mc := <-channels.EventChannel:
 			if !mc {
 				a.logger.LogInformation("Eventbus terminating, exiting eventhandler")
 				return
@@ -187,21 +188,25 @@ func (a *MyHome) eventHandler() {
 	}
 }
 
-func (a *MyHome) GetConfig() *c.Config {
-	return config
+func (a *MyHome) GetChannels() *c.Channels {
+	return channels
 }
 
-var config *c.Config
+func (a *MyHome) GetConfig() *c.Config {
+	return a.config
+}
 
-func newConfig() c.Config {
-	if config == nil {
-		config = &c.Config{
-			Path:             "Hello",
+var channels *c.Channels
+
+func newChannels() c.Channels {
+	if channels == nil {
+		channels = &c.Channels{
+
 			MainChannel:      make(chan c.Message),
 			BroadCastChannel: make(chan c.Message),
 			EventChannel:     make(chan c.Message),
 			StopChannel:      make(chan bool),
 			OsSignals:        make(chan os.Signal, 1)}
 	}
-	return *config
+	return *channels
 }

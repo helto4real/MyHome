@@ -1,0 +1,28 @@
+package hass
+
+type Result struct {
+	Id          int64       `json:"id"`
+	MessageType string      `json:"type"`
+	Success     bool        `json:"success"`
+	Result      interface{} `json:"result"`
+	Event       Event       `json:"event"`
+}
+
+type Event struct {
+	Data      EventData `json:"data"`
+	EventType string    `json:"event_type"`
+	TimeFired string    `json:"time_fired"`
+}
+
+type EventData struct {
+	EntityId string    `json:"entity_id"`
+	NewState StateData `json:"new_state"`
+	OldState StateData `json:"old_state"`
+}
+
+type StateData struct {
+	LastChanged string `json:"last_changed"`
+	LastUpdated string `json:"last_updated"`
+	State       string `json:"state"`
+	Attributes  string `json:"attributes"`
+}

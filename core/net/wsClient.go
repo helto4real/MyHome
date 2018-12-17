@@ -1,13 +1,10 @@
-// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package net
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
-	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -24,7 +21,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 131072
 )
 
 var (
@@ -38,14 +35,14 @@ var upgrader = websocket.Upgrader{
 }
 
 // Client is a middleman between the websocket connection and the hub.
-type Client struct {
-	hub *Hub
-
+type WsClient struct {
 	// The websocket connection.
 	conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	send chan []byte
+	send            chan []byte
+	ReceiverChannel chan []byte
+	Fatal           bool
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -53,9 +50,8 @@ type Client struct {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
-func (c *Client) readPump() {
+func (c *WsClient) readPump() {
 	defer func() {
-		c.hub.unregister <- c
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -65,14 +61,51 @@ func (c *Client) readPump() {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Printf("Unexpected close error: %v", err)
+			} else {
+				log.Printf("Error reading websocket: %v", err)
 			}
+
+			c.Close(true)
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		//c.hub.broadcast <- message
-		log.Printf("message->: %s", message)
+
+		c.ReceiverChannel <- message
+
 	}
+}
+func (c *WsClient) Close(fatal bool) {
+	c.Fatal = fatal
+	// Close the connection
+	c.conn.Close()
+	if c.ReceiverChannel != nil {
+		close(c.ReceiverChannel)
+		c.ReceiverChannel = nil
+	}
+	if c.send != nil {
+		close(c.send)
+		c.send = nil
+	}
+
+}
+func (c *WsClient) SendMap(message map[string]interface{}) {
+
+	jsonString, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshal message: %s", err)
+		return
+	}
+	//log.Printf("Sending message: %s", jsonString)
+	c.send <- jsonString
+
+}
+
+func (c *WsClient) SendString(message string) {
+
+	//log.Printf("Sending message: %s", message)
+	c.send <- []byte(message)
+
 }
 
 // writePump pumps messages from the hub to the websocket connection.
@@ -80,7 +113,7 @@ func (c *Client) readPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump() {
+func (c *WsClient) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -101,7 +134,7 @@ func (c *Client) writePump() {
 				return
 			}
 			w.Write(message)
-
+			//log.Print("WROTE TO SEND QUEUE: ", string(message))
 			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
@@ -122,18 +155,21 @@ func (c *Client) writePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	conn, err := upgrader.Upgrade(w, r, nil)
+func ConnectWS(ip string) *WsClient {
+
+	u := url.URL{Scheme: "ws", Host: ip, Path: "/api/websocket"}
+
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Print("dial:", err)
+		return nil
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
-	client.hub.register <- client
+
+	client := &WsClient{conn: c, send: make(chan []byte, 256), ReceiverChannel: make(chan []byte), Fatal: false}
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
 	go client.readPump()
+	return client
 }
