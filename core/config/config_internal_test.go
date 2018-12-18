@@ -2,11 +2,14 @@ package config
 
 import (
 	"testing"
+
+	h "github.com/helto4real/MyHome/helpers/test"
 )
 
 var yml = `
 home_assistant:
     ip: '192.168.0.100'
+    ssl: true
     token: 'ABCDEFG1234567'
 `
 var failyml = `
@@ -19,26 +22,16 @@ func TestOpenRawConfig(t *testing.T) {
 	c, err := getRawConfig([]byte(yml))
 
 	//Ok(t, err)
+	h.Equals(t, err, nil)
+	h.Equals(t, c.HomeAssistant.IP, "192.168.0.100")
+	h.Equals(t, c.HomeAssistant.SSL, true)
+	h.Equals(t, c.HomeAssistant.Token, "ABCDEFG1234567")
 
-	if err != nil {
-		t.Error("Failed to get raw config", err)
-	}
-	if c.HomeAssistant.IP != "192.168.0.100" {
-		t.Error("Ip address error, expected 192.168.0.100 got ", c.HomeAssistant.IP)
-	}
-	if c.HomeAssistant.Token != "ABCDEFG1234567" {
-		t.Error("Token error, expected ABCDEFG1234567 got ", c.HomeAssistant.Token)
-	}
 }
 
 func TestMalformatedYaml(t *testing.T) {
 	_, err := getRawConfig([]byte(failyml))
-	if err == nil {
-		t.Error("Failed failyml config should return err", err)
-	}
-
-	if err.Error() != "yaml: line 3: mapping values are not allowed in this context" {
-		t.Error("Unexpected error failyaml, got", err.Error())
-	}
+	h.NotEquals(t, err, nil)
+	h.Equals(t, err.Error(), "yaml: line 3: mapping values are not allowed in this context")
 
 }

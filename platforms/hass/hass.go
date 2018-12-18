@@ -66,7 +66,7 @@ func (a *HomeAssistantPlatform) connectWithReconnect() *net.WsClient {
 	for {
 		config := a.home.GetConfig()
 
-		client := n.ConnectWS(config.HomeAssistant.IP)
+		client := n.ConnectWS(config.HomeAssistant.IP, config.HomeAssistant.SSL)
 		if client == nil {
 			a.log.LogInformation("Fail to connect, reconnecting to Home Assistant in 30 seconds...")
 			// Fail to connect wait to connect again

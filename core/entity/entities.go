@@ -1,8 +1,6 @@
 package entity
 
 import (
-	"log"
-
 	c "github.com/helto4real/MyHome/core/contracts"
 )
 
@@ -19,15 +17,12 @@ func NewEntityList(home c.IMyHome) EntityList {
 
 // SetEntity returns true if not exist or state changed
 func (a *EntityList) SetEntity(entity c.IEntity) bool {
-
+	defer a.addEntity(entity)
 	if oldEntity, ok := a.entities[entity.GetID()]; ok {
-		defer a.addEntity(entity)
+
 		if oldEntity.GetState() == entity.GetState() {
-			log.Printf("SAME OLD:NEW %s : %s", oldEntity.GetName(), entity.GetName())
 			return false // No change in state
 		}
-	} else {
-		a.addEntity(entity)
 	}
 	return true
 }

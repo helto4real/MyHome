@@ -155,9 +155,12 @@ func (c *WsClient) writePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func ConnectWS(ip string) *WsClient {
-
-	u := url.URL{Scheme: "ws", Host: ip, Path: "/api/websocket"}
+func ConnectWS(ip string, ssl bool) *WsClient {
+	var scheme string = "ws"
+	if ssl == true {
+		scheme = "wss"
+	}
+	u := url.URL{Scheme: scheme, Host: ip, Path: "/api/websocket"}
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
