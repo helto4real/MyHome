@@ -4,6 +4,7 @@ package contracts
 type IEntity interface {
 	GetID() string
 	GetName() string
+	GetType() string
 	GetState() string
 	GetAttributes() string
 }

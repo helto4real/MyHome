@@ -131,6 +131,10 @@ func (a *HomeAssistantPlatform) handleMessage(message Result) {
 		a.log.LogInformation("---------------------------------------")
 		a.log.LogInformation("message->: %s", data.EntityId, data.NewState.State)
 		a.log.LogInformation("---------------------------------------")
+		newHassEntity := NewHassEntity("hass_"+data.EntityId, data.EntityId, "hass", data.NewState.State, data.NewState.Attributes)
+		message := c.NewMessage(c.MessageType.EntityUpdated, newHassEntity)
+		a.home.GetChannels().MainChannel <- *message
+
 	}
 
 }

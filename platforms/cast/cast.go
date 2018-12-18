@@ -114,6 +114,7 @@ type CastEntity struct {
 // GetId returns unique id of entity
 func (a *CastEntity) GetID() string         { return a.ID }
 func (a *CastEntity) GetState() string      { return a.State }
+func (a *CastEntity) GetType() string       { return "Cast" }
 func (a *CastEntity) GetAttributes() string { return a.Attributes }
 func (a *CastEntity) GetName() string       { return a.Name }
 
