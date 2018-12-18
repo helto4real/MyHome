@@ -14,6 +14,9 @@ func NewEntityList(home c.IMyHome) EntityList {
 		entities: make(map[string]c.IEntity),
 		home:     home}
 }
+func (a EntityList) GetEntities() map[string]c.IEntity {
+	return a.entities
+}
 
 // SetEntity returns true if not exist or state changed
 func (a *EntityList) SetEntity(entity c.IEntity) bool {

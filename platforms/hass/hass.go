@@ -51,13 +51,18 @@ func (a *HomeAssistantPlatform) InitializeDiscovery() bool {
 						a.log.LogInformation("Ending service discovery")
 						return false
 					}
+				} else {
+					return false
 				}
 
 			}
 			var result Result
 			json.Unmarshal(message, &result)
 			go a.handleMessage(result)
+		case <-a.context.Done():
+			return false
 		}
+
 	}
 
 }
@@ -66,7 +71,7 @@ func (a *HomeAssistantPlatform) connectWithReconnect() *net.WsClient {
 	for {
 		config := a.home.GetConfig()
 
-		client := n.ConnectWS(config.HomeAssistant.IP, config.HomeAssistant.SSL)
+		client := n.ConnectWS(config.HomeAssistant.IP, "/api/websocket", config.HomeAssistant.SSL)
 		if client == nil {
 			a.log.LogInformation("Fail to connect, reconnecting to Home Assistant in 30 seconds...")
 			// Fail to connect wait to connect again
@@ -124,6 +129,12 @@ func (a *HomeAssistantPlatform) handleMessage(message Result) {
 
 		if message.Id == a.getStateId {
 			a.log.LogInformation("Got all states, getting events")
+			for _, data := range message.Result {
+				newHassEntity := NewHassEntity("hass_"+data.EntityId, data.EntityId, "hass", data.State, data.Attributes)
+				message := c.NewMessage(c.MessageType.EntityUpdated, newHassEntity)
+				a.home.GetChannels().MainChannel <- *message
+			}
+
 			a.subscribeEvents()
 		}
 	} else if message.MessageType == "event" {

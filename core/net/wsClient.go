@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -40,9 +41,10 @@ type WsClient struct {
 	conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	send            chan []byte
+	SendChannel     chan []byte
 	ReceiverChannel chan []byte
 	Fatal           bool
+	syncRoutines    sync.WaitGroup
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -51,8 +53,12 @@ type WsClient struct {
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
 func (c *WsClient) readPump() {
+	c.syncRoutines.Add(1)
 	defer func() {
-		c.conn.Close()
+		c.syncRoutines.Done()
+		c.Close(true)
+		log.Printf("Close ws readpump")
+
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -66,8 +72,7 @@ func (c *WsClient) readPump() {
 				log.Printf("Error reading websocket: %v", err)
 			}
 
-			c.Close(true)
-			break
+			return
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
@@ -75,20 +80,26 @@ func (c *WsClient) readPump() {
 
 	}
 }
+
+// Close the web socket client
 func (c *WsClient) Close(fatal bool) {
 	c.Fatal = fatal
-	// Close the connection
+	if c.ReceiverChannel == nil || c.SendChannel == nil {
+		return
+	}
+	// Close the connection and ignore errors
 	c.conn.Close()
-	if c.ReceiverChannel != nil {
-		close(c.ReceiverChannel)
-		c.ReceiverChannel = nil
-	}
-	if c.send != nil {
-		close(c.send)
-		c.send = nil
-	}
 
+	close(c.ReceiverChannel)
+	c.ReceiverChannel = nil
+	close(c.SendChannel)
+	c.SendChannel = nil
+
+	//  Wait for the routines to stop
+	c.syncRoutines.Wait()
+	log.Printf("Closing websocket to Home Assistant")
 }
+
 func (c *WsClient) SendMap(message map[string]interface{}) {
 
 	jsonString, err := json.Marshal(message)
@@ -96,15 +107,14 @@ func (c *WsClient) SendMap(message map[string]interface{}) {
 		log.Printf("Error marshal message: %s", err)
 		return
 	}
-	//log.Printf("Sending message: %s", jsonString)
-	c.send <- jsonString
+
+	c.SendChannel <- jsonString
 
 }
 
 func (c *WsClient) SendString(message string) {
 
-	//log.Printf("Sending message: %s", message)
-	c.send <- []byte(message)
+	c.SendChannel <- []byte(message)
 
 }
 
@@ -114,14 +124,16 @@ func (c *WsClient) SendString(message string) {
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
 func (c *WsClient) writePump() {
+	c.syncRoutines.Add(1)
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		c.Close(true)
+		c.syncRoutines.Done()
 	}()
 	for {
 		select {
-		case message, ok := <-c.send:
+		case message, ok := <-c.SendChannel:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
@@ -136,10 +148,10 @@ func (c *WsClient) writePump() {
 			w.Write(message)
 			//log.Print("WROTE TO SEND QUEUE: ", string(message))
 			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
+			n := len(c.SendChannel)
 			for i := 0; i < n; i++ {
 				w.Write(newline)
-				w.Write(<-c.send)
+				w.Write(<-c.SendChannel)
 			}
 
 			if err := w.Close(); err != nil {
@@ -154,13 +166,13 @@ func (c *WsClient) writePump() {
 	}
 }
 
-// serveWs handles websocket requests from the peer.
-func ConnectWS(ip string, ssl bool) *WsClient {
+// ConnectWS connects to Web Sockets
+func ConnectWS(ip string, path string, ssl bool) *WsClient {
 	var scheme string = "ws"
 	if ssl == true {
 		scheme = "wss"
 	}
-	u := url.URL{Scheme: scheme, Host: ip, Path: "/api/websocket"}
+	u := url.URL{Scheme: scheme, Host: ip, Path: path}
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -168,11 +180,11 @@ func ConnectWS(ip string, ssl bool) *WsClient {
 		return nil
 	}
 
-	client := &WsClient{conn: c, send: make(chan []byte, 256), ReceiverChannel: make(chan []byte), Fatal: false}
+	client := &WsClient{conn: c, SendChannel: make(chan []byte, 256), ReceiverChannel: make(chan []byte), Fatal: false}
 
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
+	// Do write and read operations in own go routines
 	go client.writePump()
 	go client.readPump()
+
 	return client
 }

@@ -51,8 +51,11 @@ func (a *MyHome) end() {
 	} else {
 		a.logger.LogInformation("All goroutines ended, closing application")
 	}
-	// Wait some additional time to see debug messages on go routine shutdown.
-	//time.Sleep(5 * time.Second)
+
+	for _, entity := range a.entities.GetEntities() {
+		a.logger.LogInformation("%s", entity.GetName(), entity.GetState())
+	}
+
 }
 
 // waitTimeout waits for the waitgroup for the specified max timeout.
