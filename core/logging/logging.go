@@ -1,40 +1,41 @@
 package logging
 
-import (
-	"log"
-)
+import "log"
 
 // DefaultLogger logs to the standard io
 type DefaultLogger struct{}
 
+var logLn = log.Println
+var logf = log.Printf
+
 func (a DefaultLogger) LogError(format string, c ...interface{}) {
 	if c == nil {
-		log.Println(format)
+		logLn(format)
 	} else {
-		log.Printf(format+"\n", c)
+		logf(format+"\n", c...)
 	}
 }
 
 func (a DefaultLogger) LogWarning(format string, c ...interface{}) {
 	if c == nil {
-		log.Println(format)
+		logLn(format)
 	} else {
-		log.Printf(format+"\n", c)
+		logf(format+"\n", c...)
 	}
 }
 
 func (a DefaultLogger) LogInformation(format string, c ...interface{}) {
 	if c == nil {
-		log.Println(format)
+		logLn(format)
 	} else {
-		log.Printf(format+"\n", c)
+		logf(format+"\n", c...)
 	}
 }
 
 func (a DefaultLogger) LogDebug(format string, c ...interface{}) {
 	if c == nil {
-		log.Println(format)
+		logLn(format)
 	} else {
-		log.Printf(format+"\n", c)
+		logf(format+"\n", c...)
 	}
 }

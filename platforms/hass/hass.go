@@ -43,7 +43,7 @@ func (a *HomeAssistantPlatform) InitializeDiscovery() bool {
 
 	for {
 		select {
-		case message, mc := <-a.wsClient.ReceiverChannel:
+		case message, mc := <-a.wsClient.ReceiveChannel:
 			if !mc {
 				if a.wsClient.Fatal {
 					a.wsClient = a.connectWithReconnect()

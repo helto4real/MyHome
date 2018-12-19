@@ -41,17 +41,16 @@ type WsClient struct {
 	conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	SendChannel     chan []byte
-	ReceiverChannel chan []byte
-	Fatal           bool
-	syncRoutines    sync.WaitGroup
+	SendChannel chan []byte
+	// Channel for receive data
+	ReceiveChannel chan []byte
+	// Set if websocket cant revocer and need to be reconnected
+	Fatal bool
+	// Used to wait for go routines end before close whole WsClient
+	syncRoutines sync.WaitGroup
 }
 
-// readPump pumps messages from the websocket connection to the hub.
-//
-// The application runs readPump in a per-connection goroutine. The application
-// ensures that there is at most one reader on a connection by executing all
-// reads from this goroutine.
+// readPump ensures only one reader per connection.
 func (c *WsClient) readPump() {
 	c.syncRoutines.Add(1)
 	defer func() {
@@ -76,28 +75,29 @@ func (c *WsClient) readPump() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
-		c.ReceiverChannel <- message
+		c.ReceiveChannel <- message
 
 	}
 }
 
-// Close the web socket client
+// Close the web socket client to free all resources and stop and wait for goroutines
 func (c *WsClient) Close(fatal bool) {
 	c.Fatal = fatal
-	if c.ReceiverChannel == nil || c.SendChannel == nil {
+	if c.ReceiveChannel == nil || c.SendChannel == nil {
 		return
 	}
 	// Close the connection and ignore errors
 	c.conn.Close()
 
-	close(c.ReceiverChannel)
-	c.ReceiverChannel = nil
+	// Close the channels
+	close(c.ReceiveChannel)
+	c.ReceiveChannel = nil
 	close(c.SendChannel)
 	c.SendChannel = nil
 
 	//  Wait for the routines to stop
 	c.syncRoutines.Wait()
-	log.Printf("Closing websocket to Home Assistant")
+	log.Printf("Closing websocket")
 }
 
 func (c *WsClient) SendMap(message map[string]interface{}) {
@@ -118,7 +118,7 @@ func (c *WsClient) SendString(message string) {
 
 }
 
-// writePump pumps messages from the hub to the websocket connection.
+// writePump pumps messages to the websocket connection.
 //
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
@@ -146,11 +146,9 @@ func (c *WsClient) writePump() {
 				return
 			}
 			w.Write(message)
-			//log.Print("WROTE TO SEND QUEUE: ", string(message))
-			// Add queued chat messages to the current websocket message.
+			// Add queued messages to the current websocket message.
 			n := len(c.SendChannel)
 			for i := 0; i < n; i++ {
-				w.Write(newline)
 				w.Write(<-c.SendChannel)
 			}
 
@@ -166,7 +164,7 @@ func (c *WsClient) writePump() {
 	}
 }
 
-// ConnectWS connects to Web Sockets
+// ConnectWS connects to Web Socket
 func ConnectWS(ip string, path string, ssl bool) *WsClient {
 	var scheme string = "ws"
 	if ssl == true {
@@ -180,7 +178,7 @@ func ConnectWS(ip string, path string, ssl bool) *WsClient {
 		return nil
 	}
 
-	client := &WsClient{conn: c, SendChannel: make(chan []byte, 256), ReceiverChannel: make(chan []byte), Fatal: false}
+	client := &WsClient{conn: c, SendChannel: make(chan []byte, 256), ReceiveChannel: make(chan []byte), Fatal: false}
 
 	// Do write and read operations in own go routines
 	go client.writePump()
