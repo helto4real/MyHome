@@ -17,7 +17,7 @@ import (
 
 type MyHome struct {
 	platforms    []interface{}
-	entities     entity.EntityList
+	entities     *entity.List
 	logger       c.ILogger
 	config       *c.Config
 	syncRoutines sync.WaitGroup
@@ -29,7 +29,7 @@ func (a *MyHome) Init(loggerUsed c.ILogger, config *c.Config) bool {
 	a.logger = loggerUsed
 	a.config = config
 	newChannels()
-	a.entities = entity.NewEntityList(a)
+	a.entities = entity.NewEntityList()
 	a.platforms = platforms.GetPlatforms()
 	a.initializeComponents()
 
@@ -41,6 +41,7 @@ func (a *MyHome) Init(loggerUsed c.ILogger, config *c.Config) bool {
 }
 
 func (a *MyHome) end() {
+	a.entities.Close()
 	a.endDiscovery()
 	net.CloseWebServers()
 	// Wait for the main GoRoutines to finish
@@ -98,7 +99,7 @@ func (a *MyHome) GetLogger() c.ILogger {
 }
 
 func (a *MyHome) GetEntityList() c.IEntityList {
-	return &a.entities
+	return a.entities
 }
 func (a *MyHome) initializeComponents() {
 	for _, comp := range a.platforms {

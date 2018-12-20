@@ -9,7 +9,7 @@ type IEntity interface {
 	GetAttributes() string
 }
 type IEntityList interface {
-	SetEntity(IEntity) bool
+	SetEntity(IEntity)
 }
 
 // ILight interface implements what you can do on a light

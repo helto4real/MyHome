@@ -84,7 +84,7 @@ func (a *Cast) InitializeDiscovery() bool {
 				}
 			}
 			newCastEntity := NewCastEntity("cast_"+entry.Instance, deviceName, entry.AddrIPv4[0].String(), entry.Port)
-			message := c.NewMessage(c.MessageType.EntityUpdated, newCastEntity)
+			message := c.NewMessage(c.MessageType.Entity, newCastEntity)
 			a.config.MainChannel <- *message
 
 		}

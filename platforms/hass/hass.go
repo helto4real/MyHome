@@ -131,7 +131,7 @@ func (a *HomeAssistantPlatform) handleMessage(message Result) {
 			a.log.LogInformation("Got all states, getting events")
 			for _, data := range message.Result {
 				newHassEntity := NewHassEntity("hass_"+data.EntityId, data.EntityId, "hass", data.State, data.Attributes)
-				message := c.NewMessage(c.MessageType.EntityUpdated, newHassEntity)
+				message := c.NewMessage(c.MessageType.Entity, newHassEntity)
 				a.home.GetChannels().MainChannel <- *message
 			}
 
@@ -143,7 +143,7 @@ func (a *HomeAssistantPlatform) handleMessage(message Result) {
 		a.log.LogInformation("message->: %s", data.EntityId, data.NewState.State)
 		a.log.LogInformation("---------------------------------------")
 		newHassEntity := NewHassEntity("hass_"+data.EntityId, data.EntityId, "hass", data.NewState.State, data.NewState.Attributes)
-		message := c.NewMessage(c.MessageType.EntityUpdated, newHassEntity)
+		message := c.NewMessage(c.MessageType.Entity, newHassEntity)
 		a.home.GetChannels().MainChannel <- *message
 
 	}

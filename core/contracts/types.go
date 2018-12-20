@@ -20,11 +20,11 @@ func (a *Channels) CloseChannels() {
 }
 
 type messageType struct {
-	EntityUpdated string
+	Entity string
 }
 
 var MessageType messageType = messageType{
-	EntityUpdated: "entity_updated"}
+	Entity: "entity"}
 
 type Message struct {
 	Type string
