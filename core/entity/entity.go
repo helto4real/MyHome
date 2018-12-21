@@ -40,6 +40,14 @@ func (a *List) GetEntities() chan c.IEntity {
 	return entityChannel
 }
 
+// GetEntity returns entity given the entity id, second return value returns false if no entity exists
+func (a *List) GetEntity(entityID string) (c.IEntity, bool) {
+	a.m.Lock()
+	defer a.m.Unlock()
+	entity, ok := a.entities[entityID]
+	return entity, ok
+}
+
 // SetEntity returns true if not exist or state changed
 func (a *List) SetEntity(entity c.IEntity) {
 	a.m.Lock()

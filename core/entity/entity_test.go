@@ -73,6 +73,36 @@ func TestHandleMessageWrongEntityType(t *testing.T) {
 	h.Equals(t, (chan c.IEntity)(nil), el.GetEntities())
 }
 
+func TestGetEntity(t *testing.T) {
+	el := entity.NewEntityList()
+	el.SetEntity(NewFakeEntity("id", "name", "type", "state", "attributes"))
+	el.SetEntity(NewFakeEntity("id2", "name2", "type2", "state2", "attributes2"))
+
+	entity1, ok := el.GetEntity("id")
+	h.Equals(t, true, ok)
+	h.NotEquals(t, nil, entity1)
+
+	h.Equals(t, "id", entity1.GetID())
+	h.Equals(t, "name", entity1.GetName())
+	h.Equals(t, "type", entity1.GetType())
+	h.Equals(t, "state", entity1.GetState())
+	h.Equals(t, "attributes", entity1.GetAttributes())
+
+	entity2, ok := el.GetEntity("id2")
+	h.Equals(t, true, ok)
+	h.NotEquals(t, nil, entity2)
+
+	h.Equals(t, "id2", entity2.GetID())
+	h.Equals(t, "name2", entity2.GetName())
+	h.Equals(t, "type2", entity2.GetType())
+	h.Equals(t, "state2", entity2.GetState())
+	h.Equals(t, "attributes2", entity2.GetAttributes())
+
+	entity3, ok := el.GetEntity("id3")
+	h.Equals(t, false, ok)
+	h.Equals(t, nil, entity3)
+}
+
 type NonEntityType struct{}
 
 type FakeEntity struct {
