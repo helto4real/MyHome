@@ -11,13 +11,16 @@ matrix:
   - go: tip
 before_install:
 - go get github.com/mitchellh/gox
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
 install:
 - 
 script:
 - go get -t -v ./...
-- go test -v -race -cover ./...
+- go test -v -race -covermode=count -coverprofile=coverage.out ./...
 - if [ "${LATEST}" = "true" ]; then gox -os="linux darwin windows" -arch="amd64" -output="builds/{{.Dir}}_{{.OS}}_{{.Arch}}"
   -ldflags "-X main.Rev=`git rev-parse --short HEAD`" -verbose ./...; fi
+- if [ "${LATEST}" = "true" ]; then $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN ; fi
 deploy:
   provider: releases
   skip_cleanup: true
