@@ -4,11 +4,12 @@ package contracts
 type IEntity interface {
 	GetID() string
 	GetName() string
+	GetType() string
 	GetState() string
 	GetAttributes() string
 }
 type IEntityList interface {
-	SetEntity(IEntity) bool
+	SetEntity(IEntity)
 }
 
 // ILight interface implements what you can do on a light

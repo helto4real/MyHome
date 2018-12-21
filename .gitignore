@@ -6,6 +6,7 @@
 *.dylib
 debug
 count
+cover
 MyHome_*_*
 # Test binary, build with `go test -c`
 *.test

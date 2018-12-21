@@ -8,5 +8,6 @@ type Config struct {
 // HomeAssistantConfig is the configuration for the Home Assistant platform integration
 type HomeAssistantConfig struct {
 	IP    string `yaml:"ip"`
+	SSL   bool   `yaml:"ssl"`
 	Token string `yaml:"token"`
 }

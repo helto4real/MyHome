@@ -2,4 +2,5 @@
 
 home_assistant:
   ip: '192.168.0.100'
+  ssl: false
   token: 'ABCDEFG1234567'

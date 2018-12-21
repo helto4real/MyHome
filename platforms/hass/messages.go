@@ -4,10 +4,17 @@ type Result struct {
 	Id          int64       `json:"id"`
 	MessageType string      `json:"type"`
 	Success     bool        `json:"success"`
-	Result      interface{} `json:"result"`
+	Result      []GetResult `json:"result"`
 	Event       Event       `json:"event"`
 }
 
+type GetResult struct {
+	EntityId    string `json:"entity_id"`
+	LastChanged string `json:"last_changed"`
+	LastUpdated string `json:"last_updated"`
+	State       string `json:"state"`
+	Attributes  string `json:"attributes"`
+}
 type Event struct {
 	Data      EventData `json:"data"`
 	EventType string    `json:"event_type"`

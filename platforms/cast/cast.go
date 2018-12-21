@@ -84,7 +84,7 @@ func (a *Cast) InitializeDiscovery() bool {
 				}
 			}
 			newCastEntity := NewCastEntity("cast_"+entry.Instance, deviceName, entry.AddrIPv4[0].String(), entry.Port)
-			message := c.NewMessage(c.MessageType.EntityUpdated, newCastEntity)
+			message := c.NewMessage(c.MessageType.Entity, newCastEntity)
 			a.config.MainChannel <- *message
 
 		}
@@ -114,6 +114,7 @@ type CastEntity struct {
 // GetId returns unique id of entity
 func (a *CastEntity) GetID() string         { return a.ID }
 func (a *CastEntity) GetState() string      { return a.State }
+func (a *CastEntity) GetType() string       { return "Cast" }
 func (a *CastEntity) GetAttributes() string { return a.Attributes }
 func (a *CastEntity) GetName() string       { return a.Name }
 

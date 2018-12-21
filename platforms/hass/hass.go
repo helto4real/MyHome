@@ -43,7 +43,7 @@ func (a *HomeAssistantPlatform) InitializeDiscovery() bool {
 
 	for {
 		select {
-		case message, mc := <-a.wsClient.ReceiverChannel:
+		case message, mc := <-a.wsClient.ReceiveChannel:
 			if !mc {
 				if a.wsClient.Fatal {
 					a.wsClient = a.connectWithReconnect()
@@ -51,13 +51,18 @@ func (a *HomeAssistantPlatform) InitializeDiscovery() bool {
 						a.log.LogInformation("Ending service discovery")
 						return false
 					}
+				} else {
+					return false
 				}
 
 			}
 			var result Result
 			json.Unmarshal(message, &result)
 			go a.handleMessage(result)
+		case <-a.context.Done():
+			return false
 		}
+
 	}
 
 }
@@ -66,7 +71,7 @@ func (a *HomeAssistantPlatform) connectWithReconnect() *net.WsClient {
 	for {
 		config := a.home.GetConfig()
 
-		client := n.ConnectWS(config.HomeAssistant.IP)
+		client := n.ConnectWS(config.HomeAssistant.IP, "/api/websocket", config.HomeAssistant.SSL)
 		if client == nil {
 			a.log.LogInformation("Fail to connect, reconnecting to Home Assistant in 30 seconds...")
 			// Fail to connect wait to connect again
@@ -124,6 +129,12 @@ func (a *HomeAssistantPlatform) handleMessage(message Result) {
 
 		if message.Id == a.getStateId {
 			a.log.LogInformation("Got all states, getting events")
+			for _, data := range message.Result {
+				newHassEntity := NewHassEntity("hass_"+data.EntityId, data.EntityId, "hass", data.State, data.Attributes)
+				message := c.NewMessage(c.MessageType.Entity, newHassEntity)
+				a.home.GetChannels().MainChannel <- *message
+			}
+
 			a.subscribeEvents()
 		}
 	} else if message.MessageType == "event" {
@@ -131,6 +142,10 @@ func (a *HomeAssistantPlatform) handleMessage(message Result) {
 		a.log.LogInformation("---------------------------------------")
 		a.log.LogInformation("message->: %s", data.EntityId, data.NewState.State)
 		a.log.LogInformation("---------------------------------------")
+		newHassEntity := NewHassEntity("hass_"+data.EntityId, data.EntityId, "hass", data.NewState.State, data.NewState.Attributes)
+		message := c.NewMessage(c.MessageType.Entity, newHassEntity)
+		a.home.GetChannels().MainChannel <- *message
+
 	}
 
 }

@@ -17,7 +17,7 @@ import (
 
 type MyHome struct {
 	platforms    []interface{}
-	entities     entity.EntityList
+	entities     entity.List
 	logger       c.ILogger
 	config       *c.Config
 	syncRoutines sync.WaitGroup
@@ -29,7 +29,7 @@ func (a *MyHome) Init(loggerUsed c.ILogger, config *c.Config) bool {
 	a.logger = loggerUsed
 	a.config = config
 	newChannels()
-	a.entities = entity.NewEntityList(a)
+	a.entities = entity.NewEntityList()
 	a.platforms = platforms.GetPlatforms()
 	a.initializeComponents()
 
@@ -51,8 +51,11 @@ func (a *MyHome) end() {
 	} else {
 		a.logger.LogInformation("All goroutines ended, closing application")
 	}
-	// Wait some additional time to see debug messages on go routine shutdown.
-	//time.Sleep(5 * time.Second)
+
+	for entity := range a.entities.GetEntities() {
+		a.logger.LogInformation("%s", entity.GetName(), entity.GetState())
+	}
+
 }
 
 // waitTimeout waits for the waitgroup for the specified max timeout.
@@ -152,7 +155,7 @@ func (a *MyHome) Loop() bool {
 				a.logger.LogInformation("Main channel terminating, exiting Loop")
 				return false
 			}
-			if a.entities.HandleMessage(message) {
+			if a.entities.HandleMessage(&message) {
 				// Message should be broadcasted to clients
 				channels.BroadCastChannel <- message
 			}
