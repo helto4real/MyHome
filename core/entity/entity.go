@@ -11,91 +11,50 @@ import (
 // It support threadsafety by handling all writes through
 // A go routine
 type List struct {
-	entities       map[string]c.IEntity
-	enitityChannel chan c.IEntity
-	syncRoutines   sync.WaitGroup
-	home           c.IMyHome
+	entities map[string]c.IEntity
+	m        sync.Mutex
 }
 
 // NewEntityList makes a new instance of entity list
-func NewEntityList() *List {
-	el := List{
-		entities:       make(map[string]c.IEntity),
-		enitityChannel: make(chan c.IEntity)}
-
-	// All edits go through own go routine
-	go el.handleEntities()
-	return &el
+func NewEntityList() List {
+	return List{entities: make(map[string]c.IEntity)}
 }
 
-// GetEntities returns all entities in list
-func (a *List) GetEntities() map[string]c.IEntity {
-	return a.entities
-}
+// GetEntities returns a thread safe way to get all entities through a channel
+//
+func (a *List) GetEntities() chan c.IEntity {
+	a.m.Lock()
 
-// SetEntity returns true if not exist or state changed
-func (a *List) setEntity(entity c.IEntity) bool {
-	defer a.addEntity(entity)
-	if oldEntity, ok := a.entities[entity.GetID()]; ok {
+	defer a.m.Unlock()
 
-		if oldEntity.GetState() == entity.GetState() {
-			return false // No change in state
-		}
+	if len(a.entities) == 0 {
+		return nil
 	}
-	return true
+
+	entityChannel := make(chan c.IEntity, len(a.entities))
+	defer close(entityChannel)
+
+	for _, entity := range a.entities {
+		entityChannel <- entity
+	}
+	return entityChannel
 }
 
 // SetEntity returns true if not exist or state changed
 func (a *List) SetEntity(entity c.IEntity) {
-	a.enitityChannel <- entity
-}
-
-func (a *List) addEntity(entity c.IEntity) {
+	a.m.Lock()
+	defer a.m.Unlock()
 	a.entities[entity.GetID()] = entity
 }
 
-// Close the entity list go routines
-func (a *List) Close() bool {
-	if a.entities == nil {
-		return false
-	}
-
-	close(a.enitityChannel)
-	a.syncRoutines.Wait()
-	a.entities = nil
-	return true
-}
-
-// HandleEntities make sure all edits to the entity list
-// is syncronized through own goroutine so only one thread
-// can write to the list
-func (a *List) handleEntities() {
-	a.syncRoutines.Add(1)
-	defer a.syncRoutines.Done()
-
-	for {
-		select {
-		case entity, ok := <-a.enitityChannel:
-			if !ok {
-				return
-			}
-			a.setEntity(entity)
-		}
-	}
-
-}
-
 // HandleMessage handle messages from the main channel
-func (a *List) HandleMessage(message c.Message) bool {
+func (a *List) HandleMessage(message *c.Message) bool {
 	entity, ok := message.Body.(c.IEntity)
 	if !ok {
 		return false
 	}
 
-	switch mt := message.Type; mt {
-	case c.MessageType.Entity:
-		a.enitityChannel <- entity
-	}
+	a.SetEntity(entity)
 
 	return true
 }

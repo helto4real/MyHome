@@ -17,7 +17,7 @@ import (
 
 type MyHome struct {
 	platforms    []interface{}
-	entities     *entity.List
+	entities     entity.List
 	logger       c.ILogger
 	config       *c.Config
 	syncRoutines sync.WaitGroup
@@ -41,7 +41,6 @@ func (a *MyHome) Init(loggerUsed c.ILogger, config *c.Config) bool {
 }
 
 func (a *MyHome) end() {
-	a.entities.Close()
 	a.endDiscovery()
 	net.CloseWebServers()
 	// Wait for the main GoRoutines to finish
@@ -53,7 +52,7 @@ func (a *MyHome) end() {
 		a.logger.LogInformation("All goroutines ended, closing application")
 	}
 
-	for _, entity := range a.entities.GetEntities() {
+	for entity := range a.entities.GetEntities() {
 		a.logger.LogInformation("%s", entity.GetName(), entity.GetState())
 	}
 
@@ -99,7 +98,7 @@ func (a *MyHome) GetLogger() c.ILogger {
 }
 
 func (a *MyHome) GetEntityList() c.IEntityList {
-	return a.entities
+	return &a.entities
 }
 func (a *MyHome) initializeComponents() {
 	for _, comp := range a.platforms {
@@ -156,7 +155,7 @@ func (a *MyHome) Loop() bool {
 				a.logger.LogInformation("Main channel terminating, exiting Loop")
 				return false
 			}
-			if a.entities.HandleMessage(message) {
+			if a.entities.HandleMessage(&message) {
 				// Message should be broadcasted to clients
 				channels.BroadCastChannel <- message
 			}
