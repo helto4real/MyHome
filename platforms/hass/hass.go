@@ -140,7 +140,7 @@ func (a *HomeAssistantPlatform) handleMessage(message Result) {
 	} else if message.MessageType == "event" {
 		data := message.Event.Data
 		a.log.LogInformation("---------------------------------------")
-		a.log.LogInformation("message->: %s", data.EntityId, data.NewState.State)
+		a.log.LogInformation("message->: %s=%s", data.EntityId, data.NewState.State)
 		a.log.LogInformation("---------------------------------------")
 		newHassEntity := NewHassEntity("hass_"+data.EntityId, data.EntityId, "hass", data.NewState.State, data.NewState.Attributes)
 		message := c.NewMessage(c.MessageType.Entity, newHassEntity)

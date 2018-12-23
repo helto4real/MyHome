@@ -66,3 +66,10 @@ func (a *List) HandleMessage(message *c.Message) bool {
 
 	return true
 }
+
+// ByID sorting by the id
+type ByID []c.IEntity
+
+func (e ByID) Len() int           { return len(e) }
+func (e ByID) Swap(i, j int)      { e[i], e[j] = e[j], e[i] }
+func (e ByID) Less(i, j int) bool { return e[i].GetID() < e[j].GetID() }

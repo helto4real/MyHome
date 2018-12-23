@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sort"
 	"sync"
 	"syscall"
 	"time"
@@ -51,9 +52,18 @@ func (a *MyHome) end() {
 	} else {
 		a.logger.LogInformation("All goroutines ended, closing application")
 	}
+	// This is just for debugprinting during dev.. Sorting for easier access
+	entityChannel := a.entities.GetEntities()
+	sortedEntities := make([]c.IEntity, len(entityChannel))
+	i := 0
+	for e := range a.entities.GetEntities() {
+		sortedEntities[i] = e
+		i++
+	}
+	sort.Sort(entity.ByID(sortedEntities))
 
-	for entity := range a.entities.GetEntities() {
-		a.logger.LogInformation("%s", entity.GetName(), entity.GetState())
+	for _, entity := range sortedEntities {
+		a.logger.LogInformation("%s=%s", entity.GetName(), entity.GetState())
 	}
 
 }
