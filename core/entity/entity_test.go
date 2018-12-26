@@ -1,6 +1,7 @@
 package entity_test
 
 import (
+	"sort"
 	"testing"
 
 	c "github.com/helto4real/MyHome/core/contracts"
@@ -101,6 +102,26 @@ func TestGetEntity(t *testing.T) {
 	entity3, ok := el.GetEntity("id3")
 	h.Equals(t, false, ok)
 	h.Equals(t, nil, entity3)
+}
+
+func TestById(t *testing.T) {
+	var byId entity.ByID = make([]c.IEntity, 3)
+
+	byId[0] = FakeEntity{ID: "2", Name: "name"}
+	byId[1] = FakeEntity{ID: "1", Name: "name"}
+	byId[2] = FakeEntity{ID: "3", Name: "name"}
+
+	h.Equals(t, 3, byId.Len())
+	h.Equals(t, false, byId.Less(0, 1))
+
+	byId.Swap(1, 2)
+	h.Equals(t, "3", byId[1].GetID())
+
+	sort.Sort(byId)
+	h.Equals(t, "1", byId[0].GetID())
+	h.Equals(t, "2", byId[1].GetID())
+	h.Equals(t, "3", byId[2].GetID())
+
 }
 
 type NonEntityType struct{}
